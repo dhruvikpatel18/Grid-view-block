@@ -1,0 +1,20 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "grid-view/gridview-plugin",
+	"version": "1.0.0",
+	"title": "Grid view",
+	"category": "widgets",
+	"icon": "grid-view",
+	"description": "A custom Gutenberg dynamic block for publishing frontend view of list all projects in gridview.",
+	"example": {},
+	"supports": {
+		"html": false
+	},
+	"textdomain": "gridview-plugin",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"viewScript": "file:./view.js"
+}
