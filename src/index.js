@@ -27,7 +27,22 @@ import metadata from './block.json';
  */
 registerBlockType( metadata.name, {
 	/**
+     * Block attributes define the data structure for the block.
+     * Attributes can be used to store block-specific data.
+     */
+    attributes: {
+        selectedTerms: {
+            type: 'object',
+            default: {
+                projecttype: '',
+                projectcategory: '',
+                projectclient: '',
+            },
+        },
+    },
+	/**
 	 * @see ./edit.js
 	 */
 	edit: Edit,
+	save: () => null, // For dynamic blocks, return null or a function
 } );

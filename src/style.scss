@@ -3,32 +3,48 @@
  * and in the editor.
  */
 
- .portfolio-grid {
+/**
+ * Styles for the portfolio grid layout.
+ */
+.portfolio-grid {
 	display: grid;
-  	grid-template-columns: repeat(3, 1fr); /* Two columns */
+  	grid-template-columns: repeat(2, 1fr); /* Two columns */
   	gap: 20px; 
   }
   
-  .portfolio-item {
+/**
+ * Styles for individual portfolios.
+ */
+.portfolio-item {
 	display: flex;
-  	flex-direction: column;
-  	border: 1px solid #ddd; /* Add border for a nice look */
-  	padding: 20px;
+	flex-direction: column;
+	border: 1px solid #ddd; /* Add border for a nice look */
+	padding: 20px;
 	overflow: hidden; /* Hide overflowing content */
-  }
+ }
   
-  .portfolio-item h2 {
+ /**
+ * Styles for portfolio titles.
+ */
+.portfolio-item h2 {
 	font-size: 24px;
 	margin-bottom: 10px;
 	
   }
-  .portfolio-item img {
+
+/**
+ * Styles for portfolio images.
+ */
+.portfolio-item img {
 	max-width: 100%;
 	height: auto;
 	border-radius: 5px;
 	margin-bottom: 10px;
   }
   
-  .portfolio-item p {
+/**
+ * Styles for portfolio item paragraphs.
+ */
+.portfolio-item p {
 	margin-bottom: 0; /* Remove default margin for paragraphs */
-  }
+ }

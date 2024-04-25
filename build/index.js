@@ -39,6 +39,12 @@ __webpack_require__.r(__webpack_exports__);
  */
 
 
+/**
+ * Includes WordPress components for creating custom controls.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-components/
+ */
+
 
 /**
  * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
@@ -54,88 +60,146 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Exporting the Edit function as the default export of this module
+ * Main Edit function for the WordPress custom block.
  *
- * @returns {JSX.Element} The rendered JSX element for the Edit function
+ * This function defines the editing behavior of the block and is
+ * responsible for rendering controls in the editor and managing state.
+ *
+ * @param {Object} props - Props passed by WordPress block editor.
+ * @returns {JSX.Element} - JSX representation of the block editor view.
  */
-function Edit() {
-  const [portfolioData, setPortfolioData] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useState)(null);
-  const [selectedTerms, setSelectedTerms] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useState)({
+function Edit(props) {
+  // Destructure props to extract block attributes and setAttributes function
+  const {
+    attributes,
+    setAttributes
+  } = props;
+
+  // Use useBlockProps to apply default block styles
+  const blockProps = (0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)();
+
+  // Default terms for the taxonomy selections
+  const defaultSelectedTerms = {
     projecttype: "",
     projectcategory: "",
     projectclient: ""
-  });
-  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useEffect)(() => {
-    // Save selected filters to post meta
-    saveSelectedFilters(selectedTerms);
-  }, [selectedTerms]);
-  const saveSelectedFilters = filters => {
-    wp.data.dispatch('core/editor').editPost({
-      meta: {
-        'selected_filters': filters
-      }
-    });
   };
+
+  // Get selected terms from attributes or use default values
+  const {
+    selectedTerms = defaultSelectedTerms
+  } = attributes;
+
+  // Local state to manage selected terms within the block
+  const [localSelectedTerms, setLocalSelectedTerms] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useState)(selectedTerms);
+
+  // State to hold taxonomy terms for filtering options
   const [taxonomyTerms, setTaxonomyTerms] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useState)({
     projecttype: [],
     projectcategory: [],
     projectclient: []
   });
+
+  // State to store fetched portfolio data
+  const [portfolioData, setPortfolioData] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useState)(null);
+
+  /**
+      * Fetches taxonomy terms when the block is first mounted.
+      */
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useEffect)(() => {
-    fetchPortfolioData();
     fetchTaxonomyTerms("projecttype");
     fetchTaxonomyTerms("projectcategory");
     fetchTaxonomyTerms("projectclient");
-  }, [selectedTerms]);
-  const fetchPortfolioData = async () => {
-    try {
-      let url = `http://localhost:1234/wp-test/wp-json/md-custom/gb-portfolio`;
+  }, []); // Empty dependency array ensures this only runs on mount
 
-      // Add selected terms to URL if not empty
-      const selectedTermsArray = Object.values(selectedTerms);
-      const nonEmptyTerms = selectedTermsArray.filter(term => term !== "");
-      if (nonEmptyTerms.length > 0) {
-        const params = new URLSearchParams(selectedTerms);
-        url += `?${params.toString()}`;
+  /**
+      * Fetches portfolio data and updates block attributes when localSelectedTerms changes.
+      */
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_5__.useEffect)(() => {
+    fetchPortfolioData();
+    setAttributes({
+      selectedTerms: localSelectedTerms
+    });
+  }, [localSelectedTerms]); // Re-run when selected terms change
+
+  /**
+   * Fetches portfolio data based on selected terms.
+   * The data is retrieved from a custom REST API endpoint.
+   */
+  const fetchPortfolioData = async () => {
+    // Base URL for fetching portfolio data
+    let url = `http://localhost:1234/wp-test/wp-json/md-custom/gb-portfolio`;
+
+    // Construct query parameters based on local selected terms
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(localSelectedTerms)) {
+      if (value) {
+        params.append(key, value);
       }
-      const response = await fetch(url);
-      const data = await response.json();
-      setPortfolioData(data);
-    } catch (error) {
-      console.error("Error fetching portfolio data:", error);
     }
+
+    // If there are query parameters, add them to the URL
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    // Fetch portfolio data from the constructed URL
+    const response = await fetch(url);
+    const data = await response.json(); // Parse JSON response
+    // Update the local state with the fetched portfolio data
+    setPortfolioData(data);
   };
+
+  /**
+   * Fetches terms for a specific taxonomy and updates the corresponding state.
+   * Handles errors gracefully and logs them to the console.
+   *
+   * @param {string} taxonomy - The taxonomy for which terms are fetched.
+   */
   const fetchTaxonomyTerms = async taxonomy => {
     try {
       const response = await fetch(`http://localhost:1234/wp-test/wp-json/wp/v2/${taxonomy}`);
+      // Parse JSON response to get terms
       const terms = await response.json();
+      // Update the state with fetched terms for the specified taxonomy
       setTaxonomyTerms(prevState => ({
         ...prevState,
         [taxonomy]: terms
       }));
     } catch (error) {
+      // Log error to console if fetching terms fails
       console.error(`Error fetching ${taxonomy} terms:`, error);
     }
   };
-  const handleTermChange = (taxonomy, termId) => {
-    setSelectedTerms(prevState => ({
+
+  /**
+   * Handles changes in the selected term for a specific taxonomy.
+   * Updates the local state with the new selected value.
+   *
+   * @param {string} taxonomy - The taxonomy that is being changed.
+   * @param {string} value - The new selected value.
+   */
+  const handleTermChange = (taxonomy, value) => {
+    const updatedTerms = {
+      [taxonomy]: value === "all" ? "" : value
+    };
+    setLocalSelectedTerms(prevState => ({
       ...prevState,
-      [taxonomy]: termId === "all" ? "" : termId
+      ...updatedTerms
     }));
-    const queryParams = new URLSearchParams(window.location.search);
-    queryParams.set(taxonomy, termId);
-    const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
-    window.history.pushState({
-      path: newUrl
-    }, "", newUrl);
   };
+
+  /**
+   * Renders the block's user interface, including inspector controls
+   * and the portfolio data based on the selected terms.
+   */
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    ...(0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)()
+    ...blockProps
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.InspectorControls, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
     title: "Filters"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
+  }, " ", (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
     label: "Project Type",
-    value: selectedTerms.projecttype,
+    value: localSelectedTerms.projecttype,
     onChange: value => handleTermChange("projecttype", value),
     options: [{
       label: "All",
@@ -146,7 +210,7 @@ function Edit() {
     }))]
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
     label: "Project Category",
-    value: selectedTerms.projectcategory,
+    value: localSelectedTerms.projectcategory,
     onChange: value => handleTermChange("projectcategory", value),
     options: [{
       label: "All",
@@ -157,7 +221,7 @@ function Edit() {
     }))]
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
     label: "Project Client",
-    value: selectedTerms.projectclient,
+    value: localSelectedTerms.projectclient,
     onChange: value => handleTermChange("projectclient", value),
     options: [{
       label: "All",
@@ -170,34 +234,56 @@ function Edit() {
     portfolioData: portfolioData
   }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "Loading..."));
 }
+
+/**
+ * Component to render a list of portfolio items in a grid format.
+ * It displays project details like title, thumbnail, and content excerpt, along with links to the full project.
+ *
+ * @param {Object} props - The component properties.
+ * @param {Array} props.portfolioData - Array of portfolio project objects to display.
+ * @returns {JSX.Element} - The JSX element representing the portfolio grid.
+ */
 function PortfolioList({
   portfolioData
 }) {
+  /**
+   * Function to truncate content to a specified length, appending an ellipsis ("...") if truncated.
+   *
+   * @param {string} content - The original content string to be truncated.
+   * @param {number} maxLength - The maximum allowed length before truncation.
+   * @returns {string} - The truncated content, with ellipsis if needed.
+   */
   const truncateContent = (content, maxLength) => {
     if (content.length > maxLength) {
-      return content.substring(0, maxLength) + "...";
+      return content.substring(0, maxLength) + "..."; // Truncate and add ellipsis
     } else {
-      return content;
+      return content; // No truncation needed
     }
   };
-  console.log("Portfolio data:", portfolioData);
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "portfolio-grid"
-  }, portfolioData.map(project => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }, portfolioData.map(project =>
+  // Render each portfolio project as a grid item
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     key: project.id,
     className: "portfolio-item"
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("a", {
     href: project.permalink,
     target: "_blank",
     rel: "noopener noreferrer"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h2", null, project.title)), project.featured_image && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
-    src: project.featured_image.url,
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h2", null, project.title), " "), project.thumbnail ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
+    src: project.thumbnail,
     alt: project.title
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, "No image available") // Fallback if no thumbnail
+  , (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     dangerouslySetInnerHTML: {
-      __html: truncateContent(project.content, 100)
+      __html: truncateContent(project.content, 100) // Truncate content to 100 characters
     }
-  }))));
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("a", {
+    href: project.permalink,
+    target: "_blank",
+    rel: "noopener noreferrer"
+  }, "Read more"))));
 }
 
 /***/ }),
@@ -243,9 +329,24 @@ __webpack_require__.r(__webpack_exports__);
  */
 (0,_wordpress_blocks__WEBPACK_IMPORTED_MODULE_0__.registerBlockType)(_block_json__WEBPACK_IMPORTED_MODULE_3__.name, {
   /**
+      * Block attributes define the data structure for the block.
+      * Attributes can be used to store block-specific data.
+      */
+  attributes: {
+    selectedTerms: {
+      type: 'object',
+      default: {
+        projecttype: '',
+        projectcategory: '',
+        projectclient: ''
+      }
+    }
+  },
+  /**
    * @see ./edit.js
    */
-  edit: _edit__WEBPACK_IMPORTED_MODULE_2__["default"]
+  edit: _edit__WEBPACK_IMPORTED_MODULE_2__["default"],
+  save: () => null // For dynamic blocks, return null or a function
 });
 
 /***/ }),
@@ -340,7 +441,7 @@ module.exports = window["wp"]["i18n"];
   \************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"grid-view/gridview-plugin","version":"1.0.0","title":"Grid view","category":"widgets","icon":"grid-view","description":"A custom Gutenberg dynamic block for publishing frontend view of list all projects in gridview.","example":{},"supports":{"html":false},"textdomain":"gridview-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php","viewScript":"file:./view.js","attributes":{"numberOfItems":{"type":"number","default":3},"columns":{"type":"number","default":1},"displayDate":{"type":"boolean","default":true},"displayExcerpt":{"type":"boolean","default":true},"displayThumbnail":{"type":"boolean","default":true},"displayAuthorInfo":{"type":"boolean","default":true},"showAvatar":{"type":"boolean","default":true},"avatarSize":{"type":"number","default":48},"showBio":{"type":"boolean","default":true}}}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"grid-view/gridview-plugin","version":"1.0.0","title":"Grid view","category":"widgets","icon":"grid-view","description":"A custom Gutenberg dynamic block for publishing frontend view of list all projects in gridview.","example":{},"supports":{"html":false},"textdomain":"gridview-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php","viewScript":"file:./view.js"}');
 
 /***/ })
 

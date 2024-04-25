@@ -16,43 +16,5 @@
   "editorStyle": "file:./index.css",
   "style": "file:./style-index.css",
   "render": "file:./render.php",
-  "viewScript": "file:./view.js",
-  "attributes": {
-    "numberOfItems": {
-      "type": "number",
-      "default": 3
-    },
-    "columns": {
-      "type": "number",
-      "default": 1
-    },
-    "displayDate": {
-      "type": "boolean",
-      "default": true
-    },
-    "displayExcerpt": {
-      "type": "boolean",
-      "default": true
-    },
-    "displayThumbnail": {
-      "type": "boolean",
-      "default": true
-    },
-    "displayAuthorInfo": {
-      "type": "boolean",
-      "default": true
-    },
-    "showAvatar": {
-      "type": "boolean",
-      "default": true
-    },
-    "avatarSize": {
-      "type": "number",
-      "default": 48
-    },
-    "showBio": {
-      "type": "boolean",
-      "default": true
-    }
-  }
+  "viewScript": "file:./view.js"
 }

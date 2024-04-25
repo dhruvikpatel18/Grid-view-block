@@ -5,12 +5,18 @@
  * The following styles get applied both on the front of your site
  * and in the editor.
  */
+/**
+ * Styles for the portfolio grid layout.
+ */
 .portfolio-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Two columns */
+  grid-template-columns: repeat(2, 1fr); /* Two columns */
   gap: 20px;
 }
 
+/**
+ * Styles for individual portfolios.
+ */
 .portfolio-item {
   display: flex;
   flex-direction: column;
@@ -19,11 +25,17 @@
   overflow: hidden; /* Hide overflowing content */
 }
 
+/**
+* Styles for portfolio titles.
+*/
 .portfolio-item h2 {
   font-size: 24px;
   margin-bottom: 10px;
 }
 
+/**
+ * Styles for portfolio images.
+ */
 .portfolio-item img {
   max-width: 100%;
   height: auto;
@@ -31,6 +43,9 @@
   margin-bottom: 10px;
 }
 
+/**
+ * Styles for portfolio item paragraphs.
+ */
 .portfolio-item p {
   margin-bottom: 0; /* Remove default margin for paragraphs */
 }
